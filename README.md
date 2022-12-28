@@ -13,6 +13,7 @@ Learning WDL [readthedocs](https://wdl-docs.readthedocs.io/en/stable/) (recommen
 
 [JSON format](https://en.wikipedia.org/wiki/JSON#Syntax)
 
+More tutorials listed (here)(https://sciwiki.fredhutch.org/compdemos/Cromwell/#additional-wdl-resources)
 
 ## Hutch WDL tutorials (and other repos)
 
@@ -85,8 +86,30 @@ Scattering over a map can be done - it is described [here](https://bioinformatic
 
 Nested map structures might be possible, or might not - see [here](https://bioinformatics.stackexchange.com/questions/14673/reading-nested-map-data-structures-in-wdl)
 
+JSON inputs: by testing, I THINK I figured out that it's OK to include a variable in the JSON file that's not used in the `struct` that I might use to declare the format of each input variable.  However, if I try to USE that variable it's not found, so I probably want to include it in struct. The variable names in `struct` DO need to match the names in the JSON, but they do NOT need to be in the same order.
 
+JSON:  actual comments are not allowed, but we can use something like this to put in sneaky comments:`  "##_COMMENT1": "INPUT BAM",`
 
+Merging two json files from the command line:
+```
+jq -s '.[0] * .[1]' file1 file2
+```
+
+Using source files that are links:  it seems like Cromwell follows the link through to its source and uses that filename instead. So my trick of using a link to make a SHORTER file alias is not useful
+
+[Basename](https://wdl-docs.readthedocs.io/en/stable/WDL/basename/) function:
+```
+File input_file = "/Users/chris/input.bam"
+String base = basename(input_file)
+```
+This produces `input.bam`
+```
+File input_file = "/Users/chris/input.bam"
+String stripped = basename(input_file, ".bam") 
+```
+This produces the string `input`, which can then be combined with a new suffix 
+
+For getting output files properly listed, if I don't know what they're called ahead of time, I may at some point need to use a trick involving glob - see [example](https://github.com/FredHutch/tg-wdl-cellRanger/blob/main/cellRanger.wdl): `Array[File] outputDir = glob("./countrun/outs/*")`
 
 
 # Notes on conversations, tutorials, etc

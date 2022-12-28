@@ -1,3 +1,7 @@
+# this subfolder is a repo I cloned, made my own edits to, to help me learn WDL
+wdl-test-workflows
+
+#### stuff from .gitignore R template
 # History files
 .Rhistory
 .Rapp.history

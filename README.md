@@ -23,6 +23,8 @@ Hutch [Cromwell server configuration repo](https://github.com/FredHutch/diy-crom
 
 Amy's [example/test workflows](https://github.com/FredHutch/wdl-test-workflows/).  I have a clone that I edited for clarity, in `~/FH_fast_storage/cromwell-home/janet-learning-WDL/wdl-test-workflows`
 
+Learning WDL (in progress!) [FH_WDL102](https://hutchdatascience.orghttps://hutchdatascience.org/FH_WDL102_Workflows/) 
+
 ## Hutch WDL-related links/locations
 
 Shiny job submission/monitoring [dashboard](https://cromwellapp.fredhutch.org) 
@@ -37,6 +39,8 @@ My current Cromwell server details will be here: `~/FH_fast_storage/cromwell-hom
 ## Things to check out
 
 [pipeline-builder](https://github.com/epam/pipeline-builder)  visualizes pipelines, maybe even creates WDL?
+
+WDL [functions](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#standard-library)
 
 # My learning progress
 
@@ -59,18 +63,7 @@ Naming workflows - the name used in the WDL file's workflow block is used elsewh
 
 # WDL syntax questions
 - indents don't matter: is that correct?  is that true for WDL files AND json files?
-- what's the syntax for the command block?  in places I see
-```
-command <<<
 
->>>
-```
-and in places I see 
-```
-command {
-
-}
-```
 
 # Misc notes
 
@@ -80,17 +73,36 @@ VScode extensions: (installed these on my laptop but maybe not desktop)
 - Prettify Json 
 - JSON Tools 
 
+The `command` block can be enclosed with `<<< >>>` or `{ }`.   If the command itself might use `{}` (e.g. perl or python stuff) then the `<<< >>>` notation is better.   When we use `<<< >>>`, variables used in the command block are in the form `~{var}`.  If we use the {} format, variables could also be specified as `${}`. This all seems confusing: I think I will stickto this format: `command <<< ~{var} >>>`.
+
 Inputs can be specified using JSON, but there's also a way to do it using tab-delim files - see [this example](https://github.com/FredHutch/wdl-test-workflows/tree/main/localBatchFileScatter)
 
 Scattering over a map can be done - it is described [here](https://bioinformatics.stackexchange.com/questions/16100/extracting-wdl-map-keys-as-a-task) and [here](https://github.com/openwdl/wdl/issues/106#issuecomment-356047538). It may or may not be possible in v1.0 of WDL - there were some changes in v1.1.
 
 Nested map structures might be possible, or might not - see [here](https://bioinformatics.stackexchange.com/questions/14673/reading-nested-map-data-structures-in-wdl)
 
+if I'm specifying variables WITHIN the wdl script, they do not go in the input block, and they look like this:
+```
+Array[String] allSamples = ["s1", "s2"]
+Map[String, Array[String]] samplesToPairs = {
+   "s1": ["s1_pair1"],
+   "s2": ["s2_pair1","s2_pair2"]
+}
+```
+if I'm specifying variables in the json file, they go in the input{} block and look like this:
+```
+input {
+    Array[String] allSamples
+    Map[String, Array[String]] samplesToPairs
+    Map[String, Map[String,File]] pairsToFq
+}
+```
+
 JSON inputs: by testing, I THINK I figured out that it's OK to include a variable in the JSON file that's not used in the `struct` that I might use to declare the format of each input variable.  However, if I try to USE that variable it's not found, so I probably want to include it in struct. The variable names in `struct` DO need to match the names in the JSON, but they do NOT need to be in the same order.
 
 JSON:  actual comments are not allowed, but we can use something like this to put in sneaky comments:`  "##_COMMENT1": "INPUT BAM",`
 
-Merging two json files from the command line:
+Use [`jq`](https://stedolan.github.io/jq) to merge two json files from the command line:
 ```
 jq -s '.[0] * .[1]' file1 file2
 ```

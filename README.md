@@ -50,6 +50,8 @@ Next I need to learn WDL.  I got up to [here](https://wdl-docs.readthedocs.io/en
 
 I'm starting to create my first real WDL (`~/FH_fast_storage/bat_reproduction/wdl_scripts/dnaseq_fq_to_vcf.wdl`)
 
+It's going well.  One thing I'm confused about is when it decides to re-run tasks versus reuse existing results. It's rerunning more often than I would think.  Is it to do with the anonymized scatters?  i.e. some tasks get called ScatterAt93_15 rather than call-xxx
+
 # WDL-related habits I want to think about
 
 How to handle copying output files out of scratch, given that directory structure is not what I'm used to. See how it looks once I get my bat-Orr-batch2 WDL running
@@ -123,6 +125,16 @@ This produces the string `input`, which can then be combined with a new suffix
 
 For getting output files properly listed, if I don't know what they're called ahead of time, I may at some point need to use a trick involving glob - see [example](https://github.com/FredHutch/tg-wdl-cellRanger/blob/main/cellRanger.wdl): `Array[File] outputDir = glob("./countrun/outs/*")`
 
+
+Showing WDL structure as a graph
+```
+module load cromwell/84
+java -jar $EBROOTCROMWELL/womtool.jar graph dnaseq_fq_to_vcf.wdl | dot -Tpng > dnaseq_fq_to_vcf.graph.png
+```
+or a much more detailed version (in my case, far too detailed to be useful)
+```
+java -jar $EBROOTCROMWELL/womtool.jar womgraph dnaseq_fq_to_vcf.wdl | dot -Tpng > dnaseq_fq_to_vcf.graphAll.png
+```
 
 # Notes on conversations, tutorials, etc
 

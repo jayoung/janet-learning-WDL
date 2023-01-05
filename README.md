@@ -54,6 +54,11 @@ I'm starting to create my first real WDL (`~/FH_fast_storage/bat_reproduction/wd
 
 It's going well.  One thing I'm confused about is when it decides to re-run tasks versus reuse existing results. It's rerunning more often than I would think.  Is it to do with the anonymized scatters?  i.e. some tasks get called ScatterAt93_15 rather than call-xxx
 
+Tree - only show some number of levels
+```
+tree -L 5 
+```
+
 # WDL-related habits I want to think about
 
 How to handle copying output files out of scratch, given that directory structure is not what I'm used to. See how it looks once I get my bat-Orr-batch2 WDL running
@@ -127,11 +132,31 @@ This produces the string `input`, which can then be combined with a new suffix
 
 For getting output files properly listed, if I don't know what they're called ahead of time, I may at some point need to use a trick involving glob - see [example](https://github.com/FredHutch/tg-wdl-cellRanger/blob/main/cellRanger.wdl): `Array[File] outputDir = glob("./countrun/outs/*")`
 
+# womtool.jar
+
+Validation
+```
+module load cromwell/84
+
+# with a single json
+java -jar $EBROOTCROMWELL/womtool.jar validate --inputs dnaseq_fq_to_vcf.consolidatedInputs.v2.small_tinyRegions.json dnaseq_fq_to_vcf.wdl 
+
+# I don't (yet) know how to do this when I have subworkflow dependencies (this workflow requires dnaseq_fq_to_vcf.skeleton.subworkflows_bundle.zip)
+java -jar $EBROOTCROMWELL/womtool.jar validate --inputs dnaseq_fq_to_vcf_skeleton.consolidatedInputs.v2.small_tinyRegions.json dnaseq_fq_to_vcf_skeleton.wdl 
+
+# maybe I validate individual subworkflows, but in this case it cannot find the inputs (not surprising, as they pass through from the main workflow)
+java -jar $EBROOTCROMWELL/womtool.jar validate --inputs dnaseq_fq_to_vcf_skeleton.consolidatedInputs.v2.small_tinyRegions.json dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl 
+
+
+module purge
+```
+
 
 Showing WDL structure as a graph
 ```
 module load cromwell/84
 java -jar $EBROOTCROMWELL/womtool.jar graph dnaseq_fq_to_vcf.wdl | dot -Tpng > dnaseq_fq_to_vcf.graph.png
+module purge
 ```
 or a much more detailed version (in my case, far too detailed to be useful)
 ```

@@ -127,7 +127,7 @@ task runBWA {
   }
   output {
     File bam = "~{pairName}.bwa.bam"
-    File bamIndex = "~{pairName}.bwa.bai"
+    File bamIndex = "~{pairName}.bwa.bam.bai"
     File bwaLogFile = "~{pairName}.bwa.log.txt"
     File flagstats = "~{pairName}.bwa.bam.flagstats"
   }

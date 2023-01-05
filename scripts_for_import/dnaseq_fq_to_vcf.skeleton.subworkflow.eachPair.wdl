@@ -62,7 +62,8 @@ workflow dnaseq_fq_to_vcf_eachPair {
     } # end of scatter over fastq pairs
     output {
         # fastqc output
-        Array[File] fastqcDirs = flatten(flatten(runFastqc.fastqcOutputDir))
+        #Array[File] fastqcDirs = flatten(flatten(runFastqc.fastqcOutputDir))
+        Array[File] fastqcDirs = flatten(runFastqc.fastqcOutputDir)
 
         # bam files each sample after merging pairs
         Array[File] bams = runBWA.bam

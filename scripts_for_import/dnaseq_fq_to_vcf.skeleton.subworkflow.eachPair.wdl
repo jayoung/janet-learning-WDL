@@ -15,7 +15,7 @@ struct commonInputsStruct {
   File refGenome_lengths
 }
 
-workflow dnaseq_fq_to_vcf_eachPair {
+workflow eachPair {
     input {
         Array[String] pairs
         Map[String, Map[String,File]] pairsToFq

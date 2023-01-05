@@ -23,6 +23,8 @@ Hutch [Cromwell server configuration repo](https://github.com/FredHutch/diy-crom
 
 Amy's [example/test workflows](https://github.com/FredHutch/wdl-test-workflows/).  I have a clone that I edited for clarity, in `~/FH_fast_storage/cromwell-home/janet-learning-WDL/wdl-test-workflows`
 
+More [example workflows](https://github.com/FredHutch/reproducible-workflows) from Amy.  I cloned it in `~/FH_fast_storage/cromwell-home/janet-learning-WDL`
+
 Learning WDL (in progress!) [FH_WDL102](https://hutchdatascience.orghttps://hutchdatascience.org/FH_WDL102_Workflows/) 
 
 ## Hutch WDL-related links/locations
@@ -237,3 +239,44 @@ Can put task code blocks in a separate file for reuse, and import. e.g.
 import "../tasks/task_file_handling.wdl" as file_handling
 ```
 after which a task called `cat_files` (found in `task_file_handling.wdl`) is available in the importing workflow via the name `file_handling.cat_files`
+
+
+# testing reproducible-workflows
+
+I want to see if I can get the import statement to work when submitting cromwell jobs:
+```
+cd ~/FH_fast_storage/cromwell-home/janet-learning-WDL/reproducible-workflows/tools/scatter-subWorkflow-batchFile
+
+jq -s '.[0] * .[1]' batchSubmit.inputs.json batchSubmit-metadata.json > batchSubmit.consolidatedInputs.json
+```
+But I can't. 
+
+I put a question on Slack (Jan 5th, 2023):
+
+I'm in the 'go have fun' stage of the WDL/Cromwell course.   I've got a workflow running (yay!).
+
+My next step is to try moving some of the tasks to a subworkflow (seems like it'll handle scatters better, especially my nested scatters).  I've learned that the subworkflow(s) must each live in a separate wdl file, and that I read them using `import`.
+
+One option is to import from a URL using https:// in the import statement - I can do figure out how to do that. I just need to put the wdl in a public repo (it's in a private repo right now), or else figure out how to give cromwell my git credentials.
+
+But what I'd prefer to do is `import` from a local file (on `/fh/fast`) rather than via https. Cromwell docs say this: "To use a file-based import resource, provide a ZIP bundle of your resources and then use a path relative to that ZIP in your import statement.".    How do I provide a ZIP bundle to my cromwell server? is it possible via the `fh.wdlR` package, or would I need to learn about command-line based submission?
+
+My attempts involve an import statement that looks like this:
+```import "dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as eachPair```
+and give me an error like this when I try to validate:
+```[1] "Failed to import 'dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl' (reason 1 of 1): Failed to resolve 'dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl' using resolver: 'http importer (no 'relative-to' origin)' (reason 1 of 1): Relative path"```
+
+Various other attempts also failed:
+```import "file://fh/fast/malik_h/user/jayoung/bat_reproduction/wdl_scripts/dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as eachPair
+import "file://./dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as eachPair```
+
+and I'm sure it's because of this need to supply a zip bundle.
+
+
+Looking into this, here's how I would make a zip bundle:
+```
+zip test_archive test1.txt test.h test3.c
+```
+But I don't know how I would submit the zip to the cromwell server
+
+Instead I will try to import using https://

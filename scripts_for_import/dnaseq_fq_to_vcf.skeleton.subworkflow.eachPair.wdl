@@ -116,6 +116,7 @@ task runBWA {
   }
   command <<<
     echo "(bwa mem -t ~{threads} ~{ref_fasta} ~{fastqFile_R1} ~{fastqFile_R2} | samtools view -@ ~{threads} -Sb - | samtools sort -@ 4 -O bam > ~{pairName}.bwa.bam ) 2>> ~{pairName}.bwa.log.txt" > ~{pairName}.bwa.bam
+    echo "(bwa mem -t ~{threads} ~{ref_fasta} ~{fastqFile_R1} ~{fastqFile_R2} | samtools view -@ ~{threads} -Sb - | samtools sort -@ 4 -O bam > ~{pairName}.bwa.bam ) 2>> ~{pairName}.bwa.log.txt" > ~{pairName}.bwa.bam.bai
     echo "(bwa mem -t ~{threads} ~{ref_fasta} ~{fastqFile_R1} ~{fastqFile_R2} | samtools view -@ ~{threads} -Sb - | samtools sort -@ 4 -O bam > ~{pairName}.bwa.bam ) 2>> ~{pairName}.bwa.log.txt" > ~{pairName}.bwa.log.txt
     #echo "samtools index ~{pairName}.bwa.bam" > 
     echo "samtools flagstat ~{pairName}.bwa.bam > ~{pairName}.bwa.bam.flagstats" > ~{pairName}.bwa.bam.flagstats

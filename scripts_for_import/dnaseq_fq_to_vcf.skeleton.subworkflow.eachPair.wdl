@@ -32,17 +32,34 @@ workflow eachPair {
     scatter (thisPair in pairs) {
 
       ## fastqc - the task runs fastqc on R1 and R2 separately
-      Array[String] bothDirections = ["R1","R2"]
-      scatter(thisDirection in bothDirections) {
-        call runFastqc {
-          input: 
-            pairName = thisPair,
-            directionName = thisDirection,
-            fastqFile = pairsToFq[thisPair][thisDirection],
-            contam = commonInputs.fastqcContaminants,
-            threads = commonInputs.fastqcThreads
-        }
-      } # end of scatter over bothDirections
+    #   Array[String] bothDirections = ["R1","R2"]
+    #   scatter(thisDirection in bothDirections) {
+    #     call runFastqc {
+    #       input: 
+    #         pairName = thisPair,
+    #         directionName = thisDirection,
+    #         fastqFile = pairsToFq[thisPair][thisDirection],
+    #         contam = commonInputs.fastqcContaminants,
+    #         threads = commonInputs.fastqcThreads
+    #     }
+    #   } # end of scatter over bothDirections
+
+      call runFastqc as fastqc_R1 {
+        input: 
+          pairName = thisPair,
+          directionName = "R1",
+          fastqFile = pairsToFq[thisPair]["R1"],
+          contam = commonInputs.fastqcContaminants,
+          threads = commonInputs.fastqcThreads
+      }
+      call runFastqc as fastqc_R2 {
+        input: 
+          pairName = thisPair,
+          directionName = "R2",
+          fastqFile = pairsToFq[thisPair]["R2"],
+          contam = commonInputs.fastqcContaminants,
+          threads = commonInputs.fastqcThreads
+      }
 
       ## bwa using the pair
       call runBWA {
@@ -60,11 +77,14 @@ workflow eachPair {
       }
       
     } # end of scatter over fastq pairs
+
     output {
         # fastqc output
         #Array[File] fastqcDirs = flatten(flatten(runFastqc.fastqcOutputDir))
-        Array[File] fastqcDirs = flatten(runFastqc.fastqcOutputDir)
-
+        #Array[File] fastqcDirs = flatten(runFastqc.fastqcOutputDir)
+        Array[File] fastqcDirs_R1 = fastqc_R1.fastqcOutputDir
+        Array[File] fastqcDirs_R2 = fastqc_R2.fastqcOutputDir
+      
         # bam files each sample after merging pairs
         Array[File] bams = runBWA.bam
         Array[File] bamIndices = runBWA.bamIndex

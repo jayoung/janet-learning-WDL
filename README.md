@@ -11,9 +11,15 @@ notes on learning WDL/Cromwell
 
 Learning WDL [readthedocs](https://wdl-docs.readthedocs.io/en/stable/) (recommended by Amy Dec 2022)
 
-[JSON format](https://en.wikipedia.org/wiki/JSON#Syntax)
+WDL [version 1.0 specs](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md)
+
+[JSON format](https://en.wikipedia.org/wiki/JSON#Syntax) specification
 
 More tutorials listed (here)(https://sciwiki.fredhutch.org/compdemos/Cromwell/#additional-wdl-resources)
+
+Dave Tang's [Learning WDL](https://davetang.org/muse/2020/01/09/learning-wdl/) blog post
+
+[WDL Best Practices / Style Guide](https://gist.github.com/scottfrazer/aa4ab1945a6a4c331211)
 
 ## Hutch WDL tutorials (and other repos)
 
@@ -38,6 +44,14 @@ Cromwell scratch dir: `/fh/scratch/delete90/malik_h/jayoung`
 My current Cromwell server details will be here: `~/FH_fast_storage/cromwell-home/README.md`
 
 
+### Places to copy WDLs/tasks from:
+
+Broad's [WARP repository](https://github.com/broadinstitute/warp): WDL Analysis Research Pipelines (WARP) repository is a collection of cloud-optimized pipelines for processing biological data from the Broad Institute Data Sciences Platform and collaborators.
+
+[Dockstore](https://www.dockstore.org/search?descriptorType=WDL&entryType=workflows&searchMode=files)
+
+Search the Hutch github repo with 'wdl'
+
 ## Things to check out
 
 [pipeline-builder](https://github.com/epam/pipeline-builder)  visualizes pipelines, maybe even creates WDL?
@@ -46,9 +60,9 @@ WDL [functions](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#st
 
 # My learning progress
 
-I think I undertand how to run WDLs on our cluster: I worked through the [Hutch WDL101 course](https://hutchdatascience.org/FH_WDL101_Cromwell/index.html) in detail, providing lots of feedback
+I think I understand how to run WDLs on our cluster: I worked through the [Hutch WDL101 course](https://hutchdatascience.org/FH_WDL101_Cromwell/index.html) in detail, providing lots of feedback
 
-Next I need to learn WDL.  I got up to [here](https://wdl-docs.readthedocs.io/en/stable/WDL/Linear_chaining/) in the readthedocs tutorial
+Next I need to learn WDL. xxxx I got up to [here](https://wdl-docs.readthedocs.io/en/stable/WDL/variable_types/) in the readthedocs tutorial.  And I want to look at [this](https://github.com/openwdl/learn-wdl) too
 
 I'm starting to create my first real WDL (`~/FH_fast_storage/bat_reproduction/wdl_scripts/dnaseq_fq_to_vcf.wdl`)
 
@@ -73,32 +87,40 @@ Naming workflows - the name used in the WDL file's workflow block is used elsewh
 # WDL syntax questions
 - indents don't matter: is that correct?  is that true for WDL files AND json files?
 
+# WDL syntax notes
 
-# Misc notes
+The order of `call` statements in the `workflow{}` block does NOT matter.  the WDL interpreter magically figures out which tasks depend on each other and runs any that it can run at appropriate times.
 
-VScode extensions: (installed these on my laptop but maybe not desktop)
-- WDL DevTools 
-- WDL syntax highlighter 
-- Prettify Json 
-- JSON Tools 
+## Command block
+The `command` block can be enclosed with `<<< >>>` or `{ }`.   If the command itself might use `{}` (e.g. perl or python stuff) then the `<<< >>>` notation is better.   When we use `<<< >>>`, variables used in the command block are in the form `~{var}`.  If we use the {} format, variables could also be specified as `${}`. This all seems confusing: I think I will stick to this format: `command <<< ~{var} >>>`.
 
-The `command` block can be enclosed with `<<< >>>` or `{ }`.   If the command itself might use `{}` (e.g. perl or python stuff) then the `<<< >>>` notation is better.   When we use `<<< >>>`, variables used in the command block are in the form `~{var}`.  If we use the {} format, variables could also be specified as `${}`. This all seems confusing: I think I will stickto this format: `command <<< ~{var} >>>`.
+## String manipulation
 
-Inputs can be specified using JSON, but there's also a way to do it using tab-delim files - see [this example](https://github.com/FredHutch/wdl-test-workflows/tree/main/localBatchFileScatter)
-
-Scattering over a map can be done - it is described [here](https://bioinformatics.stackexchange.com/questions/16100/extracting-wdl-map-keys-as-a-task) and [here](https://github.com/openwdl/wdl/issues/106#issuecomment-356047538). It may or may not be possible in v1.0 of WDL - there were some changes in v1.1.
-
-Nested map structures might be possible, or might not - see [here](https://bioinformatics.stackexchange.com/questions/14673/reading-nested-map-data-structures-in-wdl)
-
-if I'm specifying variables WITHIN the wdl script, they do not go in the input block, and they look like this:
+[Basename](https://wdl-docs.readthedocs.io/en/stable/WDL/basename/) gets a file name without the path.  Simplest usage:
 ```
-Array[String] allSamples = ["s1", "s2"]
-Map[String, Array[String]] samplesToPairs = {
-   "s1": ["s1_pair1"],
-   "s2": ["s2_pair1","s2_pair2"]
-}
+File input_file = "/Users/chris/input.bam"
+String base = basename(input_file)
+    # Result: input.bam
 ```
-if I'm specifying variables in the json file, they go in the input{} block and look like this:
+Can also strip off a specified extension:
+```
+File input_file = "/Users/chris/input.bam"
+String stripped = basename(input_file, ".bam") 
+    # Result: input
+```
+
+## Input data files (e.g fq.gz)
+
+Specifying input data files that are actually links: I thought I might do this so that my fastq file aliasing would be used.  But it seems like Cromwell follows the link through to its source and uses the original filename instead. So my trick of using a link to make a shorter file alias is not useful.
+
+## Specifying workflow inputs
+
+Specify inputs using:
+- JSON file
+- tab-delimited files: see [this example](https://github.com/FredHutch/wdl-test-workflows/tree/main/localBatchFileScatter)
+- hard-coded within the WDL script.
+
+When I provide inputs in a JSON file, I need to tell the WDL what format each one is in, by including it in the `input{}` block like this:
 ```
 input {
     Array[String] allSamples
@@ -107,34 +129,64 @@ input {
 }
 ```
 
-JSON inputs: by testing, I THINK I figured out that it's OK to include a variable in the JSON file that's not used in the `struct` that I might use to declare the format of each input variable.  However, if I try to USE that variable it's not found, so I probably want to include it in struct. The variable names in `struct` DO need to match the names in the JSON, but they do NOT need to be in the same order.
+Hard-coded inputs/variables do NOT go in the input{} block, and they look like this:
+```
+Array[String] allSamples = ["s1", "s2"]
+Map[String, Array[String]] samplesToPairs = {
+   "s1": ["s1_pair1"],
+   "s2": ["s2_pair1","s2_pair2"]
+}
+```
 
-JSON:  actual comments are not allowed, but we can use something like this to put in sneaky comments:`  "##_COMMENT1": "INPUT BAM",`
+JSON inputs: it seems like it's OK to include a variable in the JSON file that's does not have a format declared in the WDL file, either directly or via a `struct` (structure). The variable names in `struct` DO need to match the names in the JSON, but they do NOT need to be in the same order.
 
-Use [`jq`](https://stedolan.github.io/jq) to merge two json files from the command line:
+JSON format: there's no way to include true comments, but we can use something like this so that comments masquerade as data:
 ```
-jq -s '.[0] * .[1]' file1 file2
+  "##_COMMENT1": "INPUT BAM",
 ```
 
-Using source files that are links:  it seems like Cromwell follows the link through to its source and uses that filename instead. So my trick of using a link to make a SHORTER file alias is not useful
+To merge two or more json files from the command line, we use [`jq`](https://stedolan.github.io/jq)
+```
+jq -s '.[0] * .[1]' file1 file2 > out.json
+jq -s '.[0] * .[1] * .[2]' file1 file2 file3 > out.json
+```
 
-[Basename](https://wdl-docs.readthedocs.io/en/stable/WDL/basename/) function:
-```
-File input_file = "/Users/chris/input.bam"
-String base = basename(input_file)
-```
-This produces `input.bam`
-```
-File input_file = "/Users/chris/input.bam"
-String stripped = basename(input_file, ".bam") 
-```
-This produces the string `input`, which can then be combined with a new suffix 
+## Scattering
 
-For getting output files properly listed, if I don't know what they're called ahead of time, I may at some point need to use a trick involving glob - see [example](https://github.com/FredHutch/tg-wdl-cellRanger/blob/main/cellRanger.wdl): `Array[File] outputDir = glob("./countrun/outs/*")`
+Scattering over a map can be done - it is described [here](https://bioinformatics.stackexchange.com/questions/16100/extracting-wdl-map-keys-as-a-task) and [here](https://github.com/openwdl/wdl/issues/106#issuecomment-356047538). It may or may not be possible in v1.0 of WDL - there were some changes in v1.1.
+
+## Map structures
+
+Nested map structures might be possible, or might not - see [here](https://bioinformatics.stackexchange.com/questions/14673/reading-nested-map-data-structures-in-wdl)
+
+## Outputs
+
+To get output files properly listed, if I don't know what they're called ahead of time, I may at some point need to use a trick involving glob - see [example](https://github.com/FredHutch/tg-wdl-cellRanger/blob/main/cellRanger.wdl): `Array[File] outputDir = glob("./countrun/outs/*")`
+
+
+## modularizing code
+
+See example [here](https://github.com/theiagen/terra_utilities/blob/main/workflows/wf_cat_column.wdl)
+
+Can put task code blocks in a separate file for reuse, and import. e.g.
+```
+import "../tasks/task_file_handling.wdl" as file_handling
+```
+after which a task called `cat_files` (found in `task_file_handling.wdl`) is available in the importing workflow via the name `file_handling.cat_files`
+
+# Misc notes
+
+VScode extensions: (installed these on my laptop but maybe not the work desktop)
+- WDL DevTools 
+- WDL syntax highlighter 
+- Prettify Json 
+- JSON Tools 
+
+
 
 # womtool.jar
 
-Validation
+## Validation
 ```
 module load cromwell/84
 
@@ -147,12 +199,12 @@ java -jar $EBROOTCROMWELL/womtool.jar validate --inputs dnaseq_fq_to_vcf_skeleto
 # maybe I validate individual subworkflows, but in this case it cannot find the inputs (not surprising, as they pass through from the main workflow)
 java -jar $EBROOTCROMWELL/womtool.jar validate --inputs dnaseq_fq_to_vcf_skeleton.consolidatedInputs.v2.small_tinyRegions.json dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl 
 
-
 module purge
 ```
 
+## workflow graph
 
-Showing WDL structure as a graph
+To plot structure of a WDL workflow as a graph:
 ```
 module load cromwell/84
 java -jar $EBROOTCROMWELL/womtool.jar graph dnaseq_fq_to_vcf.wdl | dot -Tpng > dnaseq_fq_to_vcf.graph.png
@@ -225,20 +277,13 @@ When does cromwell decide to re-run a task?
 It does NOT usually look at md5 checksums to really really make sure a file is identical.  There is a way to make it do that, but it makes everything very slow.
 
 
-### Places to copy WDLs/tasks from:
-
-Broad's [WARP repository](https://github.com/broadinstitute/warp): WDL Analysis Research Pipelines (WARP) repository is a collection of cloud-optimized pipelines for processing biological data from the Broad Institute Data Sciences Platform and collaborators.
-
-[Dockstore](https://www.dockstore.org/search?descriptorType=WDL&entryType=workflows&searchMode=files)
-
-Search the Hutch github repo with 'wdl'
 
 ### How to move/copy output files to a more sensible place. 
 
 Several options: 
 - Add a 'cp' task at the very end of the workflow
 - Use the table of output file names I can get from the Shiny app (or via the fh.wdlR package) as input for a shell/perl/R script to copy files locally.
-- Use the [workflow options json](https://cromwell.readthedocs.io/en/stable/wf_options/Overview/).   One of the many things I can do with this file is to specify a place to copy the final output files to.The usual behavior is to copy the whole crazy nested structure of the workflow directory - this guarantees we never overwrite files if they have the same names as one another.  There is some sort of option to un-nest, but you have to be very careful about file naming.  
+- Use the [workflow options json](https://cromwell.readthedocs.io/en/stable/wf_options/Overview/).   One of the many things I can do with this file is to specify a place to copy the final output files to. The usual behavior is to copy the whole crazy nested structure of the workflow directory - this guarantees we never overwrite files if they have the same names as one another. There is some sort of option to un-nest, but you have to be very careful about file naming.  
 
 
 ### Tips for developing WDL code
@@ -255,53 +300,33 @@ Should be able to do a nested scatter (e.g. scatter over samples, then scatter e
 
 In my case (bat SNP calling) I will want to hard-code the ~100 bed file names into a json file to specify them as inputs. Amy says it's unlikely I can use their sequential numbering to help me.
 
-### Modularizing code
 
-See example [here](https://github.com/theiagen/terra_utilities/blob/main/workflows/wf_cat_column.wdl)
+# using sub-workflows
 
-Can put task code blocks in a separate file for reuse, and import. e.g.
+If I want to include additional WDL files, e.g. if I have split some tasks into sub-workflows, I need to supply the extra WDL files to the Cromwell server when I submit the job. I have two options.
+
+## Option 1: use https
+
+I make the sub.wdl files web-accessible (e.g. on github), and import the raw version, like this:
 ```
-import "../tasks/task_file_handling.wdl" as file_handling
+import "https://raw.githubusercontent.com/jayoung/janet-learning-WDL/main/scripts_for_import/dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as sub_eachPair
 ```
-after which a task called `cat_files` (found in `task_file_handling.wdl`) is available in the importing workflow via the name `file_handling.cat_files`
-
-
-# testing reproducible-workflows
-
-I want to see if I can get the import statement to work when submitting cromwell jobs:
+Sometimes I might want to specify a particular commit. For example, I was having trouble seeing the updated version of a wdl soon after I synced to git, because github only updates the raw cache every 5 minutes. See [this post](https://stackoverflow.com/questions/62785962/get-raw-file-from-github-without-waiting-for-5-minute-cache-update). I do it like this:
 ```
-cd ~/FH_fast_storage/cromwell-home/janet-learning-WDL/reproducible-workflows/tools/scatter-subWorkflow-batchFile
-
-jq -s '.[0] * .[1]' batchSubmit.inputs.json batchSubmit-metadata.json > batchSubmit.consolidatedInputs.json
+import "https://raw.githubusercontent.com/jayoung/janet-learning-WDL/dfed3d18be8c7150d01f420b60312470e8b3749c/scripts_for_import/dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as sub_eachPair
 ```
-But I can't. 
 
-I put a question on Slack (Jan 5th, 2023):
+## Option 2 - make a zip bundle
 
-I'm in the 'go have fun' stage of the WDL/Cromwell course.   I've got a workflow running (yay!).
-
-My next step is to try moving some of the tasks to a subworkflow (seems like it'll handle scatters better, especially my nested scatters).  I've learned that the subworkflow(s) must each live in a separate wdl file, and that I read them using `import`.
-
-One option is to import from a URL using https:// in the import statement - I can do figure out how to do that. I just need to put the wdl in a public repo (it's in a private repo right now), or else figure out how to give cromwell my git credentials.
-
-But what I'd prefer to do is `import` from a local file (on `/fh/fast`) rather than via https. Cromwell docs say this: "To use a file-based import resource, provide a ZIP bundle of your resources and then use a path relative to that ZIP in your import statement.".    How do I provide a ZIP bundle to my cromwell server? is it possible via the `fh.wdlR` package, or would I need to learn about command-line based submission?
-
-My attempts involve an import statement that looks like this:
-```import "dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as eachPair```
-and give me an error like this when I try to validate:
-```[1] "Failed to import 'dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl' (reason 1 of 1): Failed to resolve 'dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl' using resolver: 'http importer (no 'relative-to' origin)' (reason 1 of 1): Relative path"```
-
-Various other attempts also failed:
-```import "file://fh/fast/malik_h/user/jayoung/bat_reproduction/wdl_scripts/dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as eachPair
-import "file://./dnaseq_fq_to_vcf.skeleton.subworkflow.eachPair.wdl" as eachPair```
-
-and I'm sure it's because of this need to supply a zip bundle.
-
-
-Looking into this, here's how I would make a zip bundle:
+I put the extra WDLs into a zip bundle like this:
 ```
-zip test_archive test1.txt test.h test3.c
+zip subwdls sub1.wdl sub2.wdl
 ```
-But I don't know how I would submit the zip to the cromwell server
+And I can submit ththe zip bundle to Cromwell via `fh.wdlR` using the `Dependencies` option:
+```
+thisJob <- cromwellSubmitBatch(WDL = "my_workflow.wdl", 
+                               Params = "my_inputs.json", 
+                               Dependencies = "subwdls.zip")
+```
 
-Instead I will try to import using https://
+

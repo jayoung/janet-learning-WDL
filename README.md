@@ -31,7 +31,7 @@ Amy's [example/test workflows](https://github.com/FredHutch/wdl-test-workflows/)
 
 More [example workflows](https://github.com/FredHutch/reproducible-workflows) from Amy.  I cloned it in `~/FH_fast_storage/cromwell-home/janet-learning-WDL`
 
-Learning WDL (in progress!) [FH_WDL102](https://hutchdatascience.orghttps://hutchdatascience.org/FH_WDL102_Workflows/) 
+Learning WDL [FH_WDL102](https://hutchdatascience.orghttps://hutchdatascience.org/FH_WDL102_Workflows/) 
 
 ## Hutch WDL-related links/locations
 
@@ -58,20 +58,25 @@ Search the Hutch github repo with 'wdl'
 
 WDL [functions](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#standard-library)
 
+# To do
+
+finish going through tutorials
+
+understand better when Cromwell uses cached results or not
+
+
 # My learning progress
 
 I think I understand how to run WDLs on our cluster: I worked through the [Hutch WDL101 course](https://hutchdatascience.org/FH_WDL101_Cromwell/index.html) in detail, providing lots of feedback
 
-Next I need to learn WDL. xxxx I got up to [here](https://wdl-docs.readthedocs.io/en/stable/WDL/variable_types/) in the readthedocs tutorial.  And I want to look at [this](https://github.com/openwdl/learn-wdl) too
+I want to look at [OpenWDL tutorials](https://github.com/openwdl/learn-wdl) too
 
-I'm starting to create my first real WDL (`~/FH_fast_storage/bat_reproduction/wdl_scripts/dnaseq_fq_to_vcf.wdl`)
+My first real WDL is working (`~/FH_fast_storage/bat_reproduction/wdl_scripts/dnaseq_fq_to_vcf.wdl`)
 
-It's going well.  One thing I'm confused about is when it decides to re-run tasks versus reuse existing results. It's rerunning more often than I would think.  Is it to do with the anonymized scatters?  i.e. some tasks get called ScatterAt93_15 rather than call-xxx
+It's going well.  One thing I'm confused about is when it decides to re-run tasks versus reuse existing results. It's rerunning more often than I would think.  Is it to do with the anonymized scatters?  i.e. some tasks get called ScatterAt93_15 rather than call-TaskName
 
-Tree - only show some number of levels
-```
-tree -L 5 
-```
+xxx think about how to handle copying output files out of scratch
+
 
 # WDL-related habits I want to think about
 
@@ -176,12 +181,38 @@ after which a task called `cat_files` (found in `task_file_handling.wdl`) is ava
 
 # Misc notes
 
-VScode extensions: (installed these on my laptop but maybe not the work desktop)
+WDL arrays are 0-indexed
+
+If the cromwell server times out while a workflow is running, jobs do continue.  "Note: when servers go down, all jobs they'd sent will continue.  When you start up a server the next time using the same database, the new server will pick up whereever the previous workflows left off."
+
+Unix `tree` command: for cromwell dirs, it's often useful to only show some number of levels
+```
+tree -L 5 
+```
+
+## VScode extensions
+
+(installed these on my laptop but maybe not the work desktop)
 - WDL DevTools 
 - WDL syntax highlighter 
 - Prettify Json 
 - JSON Tools 
 
+## temporary dirs used by Cromwell
+
+When running through cromwell, the tmpdir is set in each script, and is always a subdir of wherever cromwell-executions lives (in my case this is on `/fh/scratch`). 
+
+When running a plain sbatch job, the tmpdir is elsewhere, e.g. `/loc/scratch/7617088`.   
+
+I want to deliberately set the tmp dir for picard.jar jobs (e.g. MarkDuplicates), because they seem to run a lot faster using `/loc/scratch/` dirs than they do using subdirs of `/fh/scratch`.  I set that in two places: for java using `-Djava.io.tmpdir`, and using the `-TMP_DIR` argument to `picard.jar`
+```
+java -Xmx10g -Djava.io. -Djava.io.tmpdir=$SCRATCH_LOCAL -jar $EBROOTPICARD/picard.jar MarkDuplicates -TMP_DIR $SCRATCH_LOCAL
+```
+
+## job submission at the Hutch
+
+For a more sophisticated way to interact with a Cromwell server: "The Cromwell server has an API so the app and the R package are just wrappers for talking to the API. if you start up a server, and then in your browser go to http://gizmok1:55555 (or whatever), you'll see the SWagger UI and you can futz around all you like with the endpoint definitions. Then you can use any old command line tool to send workflows or do any of this stuff."  
+I THINK you would use that swagger UI to produce an examplecurl command (it also submits the workflow). Then maybe on another occasion, you could copy and modify that curl command, maybe playing with additional options listed in the swaggerUI, and then just copy-paste the curl command onto the rhino/gizmo command line to submit an additional job?
 
 
 # womtool.jar
@@ -214,6 +245,29 @@ or a much more detailed version (in my case, far too detailed to be useful)
 ```
 java -jar $EBROOTCROMWELL/womtool.jar womgraph dnaseq_fq_to_vcf.wdl | dot -Tpng > dnaseq_fq_to_vcf.graphAll.png
 ```
+
+# When does a job rerun?
+
+It was able to reuse old results when the only change to a task was to add a memory request to a runtime block (`memory: "12GB"`).
+
+Interesting - I copy-pasted a task from one workflow to another.  Cromwell was able to figure out that I had run that task in an identical way in a totally different workflow, and it re-used the results.
+```
+task hostname {
+  command {
+    echo $(hostname)
+    echo "output of which codeml"
+    which codeml
+    echo "done"
+  }
+  output {
+    File out = stdout()
+  }
+}
+```
+That brings up a question - Cromwell server is storing a lot of old results. Does the search through the database of cached results ever get so slow that it's impractical?  Should I be clearing the database occasionally?
+
+xxxx I want to do a test.  let's say I have a pipeline, I run it on two samples.  I then edit the json to add a third sample but I don't change anything else. does cromwell rerun the first two samples, or not?  is the answer the same regardless of sample order in the json?
+
 
 # Notes on conversations, tutorials, etc
 

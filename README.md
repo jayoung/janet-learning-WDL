@@ -118,6 +118,12 @@ String stripped = basename(input_file, ".bam")
 
 Specifying input data files that are actually links: I thought I might do this so that my fastq file aliasing would be used.  But it seems like Cromwell follows the link through to its source and uses the original filename instead. So my trick of using a link to make a shorter file alias is not useful.
 
+## Using directories as intermediate results files
+
+Turns out you can't pass around directories between tasks (at least not right now, in version 1.0 of WDL+Cromwell) - you have to tar.gz them. This seems like an unnecessary step when running on a local cluster (but sounds like there's a good reason to do it when running on the cloud - hard to pass around directories, easier to pass around files)
+
+See `~/FH_fast_storage/cromwell-home/janet-workflow-tests/janet_caching_question/janet_caching_question.md`
+
 ## Specifying workflow inputs
 
 Specify inputs using:

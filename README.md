@@ -77,6 +77,7 @@ It's going well.  One thing I'm confused about is when it decides to re-run task
 
 xxx think about how to handle copying output files out of scratch
 
+xxx I want to try jobname as a runtime variable
 
 # WDL-related habits I want to think about
 
@@ -254,7 +255,9 @@ java -jar $EBROOTCROMWELL/womtool.jar womgraph dnaseq_fq_to_vcf.wdl | dot -Tpng 
 
 # When does a job rerun?
 
-It was able to reuse old results when the only change to a task was to add a memory request to a runtime block (`memory: "12GB"`).
+It was able to reuse old results when the only change to a task was to add a memory request to a runtime block (`memory: "12GB"`).  
+
+This [page](https://cromwell.readthedocs.io/en/stable/cromwell_features/CallCaching/) explains that while changes in some runtime variables WOULD trigger a task to be rerun (ContinueOnReturnCode, Docker, FailOnStderr), other runtime variables (including `memory`, `cpu`, and `disks`) can be changed and the cache can still be used.
 
 Interesting - I copy-pasted a task from one workflow to another.  Cromwell was able to figure out that I had run that task in an identical way in a totally different workflow, and it re-used the results.
 ```
@@ -274,6 +277,44 @@ That brings up a question - Cromwell server is storing a lot of old results. Doe
 
 xxxx I want to do a test.  let's say I have a pipeline, I run it on two samples.  I then edit the json to add a third sample but I don't change anything else. does cromwell rerun the first two samples, or not?  is the answer the same regardless of sample order in the json?
 
+
+# Failure Modes
+
+Documented [here](https://cromwell.readthedocs.io/en/stable/execution/ExecutionTwists/): 
+
+"Cromwell supports two failure modes, which specify how Cromwell behaves when a job fails during the execution of a workflow.
+`NoNewCalls` (default)
+Cromwell does not start any new call as soon as a job fails. Cromwell will still monitor the rest of the jobs until they complete (successfully or not).
+`ContinueWhilePossible`
+Cromwell attempts to run as many jobs as possible until no more can be started. When all running jobs are complete, the workflow fails."
+
+# Memory requests
+
+On our cluster, [slurm does NOT let us control memory allocations](https://sciwiki.fredhutch.org/scicomputing/compute_jobs/#memory):  
+
+"Currently memory (or RAM) is not scheduled by Slurm. This means that requesting memory has little effect on the job or its available resources. Memory is currently only advisory: Slurm will only ensure that the node allocated to the job has more memory installed than the amount requested by the job- it does not look at memory availability or what is consumed by yours or other jobs on the node.
+
+When your job needs “a lot” of memory use CPUs as a proxy for the memory you expect to be needed. If you think your job will need more than 4GB of memory, request one CPU for every 4GB required. For example, if you think your job will need 6GB of RAM, you would request 2 CPUs (adjust upward when the desired memory isn’t a multiple of four).
+
+If you still want to add a memory request, use the --mem option. This option takes an argument: a number indicating the amount of memory required on the node. The default unit is megabytes- to specify the unit, append K, M, G, or T for kilobytes, megabytes, gigabytes, or terabytes."
+
+So in WDL I will specify memory AND cpu.  
+```
+    memory: "12GB"
+    cpu: 3    ##  memory ~ 4 x cpu
+```
+Memory will be ignored (unless it's super-big and would affect which nodes I might be allocated to) - it's CPUs that will be more likely to play into whether memory is actually available.
+
+
+xxx for gatk:  what's the difference between -Xmx10g and -Xms10g ?
+
+The flag Xmx specifies the maximum memory allocation pool for a Java Virtual Machine (JVM), while Xms specifies the initial memory allocation pool. The Xms flag has no default value, and Xmx typically has a default value of 256 MB. A common use for these flags is when you encounter a java.lang.OutOfMemoryError.
+
+This means that your JVM will be started with Xms amount of memory and will be able to use a maximum of Xmx amount of memory. For example, starting a JVM like below will start it with 256 MB of memory and will allow the process to use up to 2048 MB of memory:
+
+java -Xms256m -Xmx2048m
+
+xxx where's that page that tells which runtime variables make cromwell think it needs to rerun a job?
 
 # Notes on conversations, tutorials, etc
 

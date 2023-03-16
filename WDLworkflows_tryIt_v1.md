@@ -1,6 +1,6 @@
 # Notes
 
-October 2022
+## set up first jobStore MariaDB database October 2022
 
 Trying the original instructions for a [diy-cromwell-server](https://github.com/FredHutch/diy-cromwell-server).  As of Nov 2022, [newer (better?) instructions](https://hutchdatascience.org/FH_WDL101_Cromwell/introduction.html) exist - see [WDLworkflows_tryIt_v2.md](janets_NOTES_forMyself/WDLworkflows_tryIt_v2.md).
 
@@ -23,7 +23,6 @@ mysql --host mydb --port 32281 --user jayoung --password
 Leave the password argument blank. You will be prompted to enter the password.
 ```
 
-
 ```
 cd ~/FH_fast_storage/cromwell-home
 module purge
@@ -33,8 +32,43 @@ mysql --host mydb --port 32281 --user jayoung --password
 create database jayoungWDL;
    # I think it worked?  I got this message:
    # Query OK, 1 row affected (0.001 sec)
+```
+
+
+
+## set up second jobStore MariaDB database March 16 2023
+
+I was having some trouble running a workflow, and wondered if a new small MariaDB would be a good idea
+
+I use the Hutch [DB4SCI interface](https://mydb.fredhutch.org/index) described [here](https://sciwiki.fredhutch.org/scicomputing/store_databases/#db4sci--previously-mydb) and I select these:
+  - create DB container (MariaDB 10.3)
+  - backup frequency = never
+  - database name = jayoungWDL_v2
+  - user name = jayoung
+  - password (see cromUserConfig.txt)
+
+Result:
+```
+Your MariaDB container has been created. Container name: jayoungWDL_v2
+
+Use mysql command line tools to access your new MariaDB.
+mysql --host mydb --port 32297 --user jayoung --password
+
+Leave the password argument blank. You will be prompted to enter the password.
+```
 
 ```
+cd ~/FH_fast_storage/cromwell-home
+module purge
+module load MariaDB/10.5.1-foss-2019b
+mysql --host mydb --port 32297 --user jayoung --password
+   # and from the MariaDB prompt:
+create database jayoungWDL_v2;
+   #  got this message:
+   # Query OK, 1 row affected (0.001 sec)
+```
+
+## setting up a cromwell server using that MariaDB jobStore database
 
 (I have since deleted this git clone and made a new one)
 ```
@@ -46,6 +80,8 @@ git clone --branch main https://github.com/FredHutch/diy-cromwell-server.git
 cp ./diy-cromwell-server/cromUserConfig.txt .
     # and edit
 ```
+
+Make sure cromUserConfig.txt points towards the correct database (`jayoungWDL` or `jayoungWDL_v2`) and has the corresponding port.
 
 ```
 cd ~/FH_fast_storage/cromwell-home
